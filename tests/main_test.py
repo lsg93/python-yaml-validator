@@ -1,16 +1,11 @@
-config_stubs = {}
-
-
 def test_main_exits_with_code_0_and_success_message_when_completing_execution(
-    cli, config_path
+    cli, create_config
 ):
-    # Set default config path using stub - it is a generator, so call next().
-    next(config_path())
+    # fixture creates a default config if no path is provided.
+    create_config()
+
     # main() runs without arguments, and should pick up default config path from fixture
     result = cli()
-
-    # teardown - very ugly
-    next(config_path())
 
     assert result.exit_code == 0
 
@@ -18,7 +13,7 @@ def test_main_exits_with_code_0_and_success_message_when_completing_execution(
 # def test_main_can_read_an_existing_config_file_when_no_path_is_provided(
 #     cli, config_path
 # ):
-#     config_path("mock-yaml-data")
+#     create_config_path("mock-yaml-data")
 #     result = cli()
 #     assert result.exit_code == 0
 #     assert result.output == "Success!"

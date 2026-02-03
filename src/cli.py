@@ -1,4 +1,11 @@
+import os
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
+
+
+class ConfigFileNotFoundException(Exception):
+    pass
 
 
 class NoDefaultConfigException(Exception):
@@ -10,11 +17,19 @@ class InvalidArgumentException(Exception):
     pass
 
 
-ROOT_DIR = Path(__file__).parent.parent
-DEFAULT_CONFIG_PATH = Path.joinpath(ROOT_DIR, "validator-config.yaml")
+# This class hasn't got any actual usage at the moment, it's just a foundation to get tests passing.
+@dataclass
+class Config:
+    path: Optional[str] = None
 
+    def load_from_file(self, path: Optional[Path] = None):
+        if self.path is None:
+            path = Path(os.getenv("DEFAULT_CONFIG_PATH"))
 
-def get_default_config(path: Path = DEFAULT_CONFIG_PATH) -> Path:
-    if path.exists() and path.is_file():
-        return path
-    raise NoDefaultConfigException()
+        if path.exists() and path.is_file():
+            return path
+        else:
+            if self.path is None:
+                raise NoDefaultConfigException
+            else:
+                raise ConfigFileNotFoundException
