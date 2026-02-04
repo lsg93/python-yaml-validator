@@ -10,7 +10,6 @@ from src import Config, ConfigFileNotFoundException, NoDefaultConfigException
 load_dotenv()
 
 app = typer.Typer()
-config = Config()
 
 
 def run(
@@ -27,6 +26,7 @@ def run(
     ] = None,
 ):
     try:
+        config = Config()
         config.load_from_file(config_path)
     except (NoDefaultConfigException, ConfigFileNotFoundException) as e:
         typer.echo(f"Error : {str(e)}")

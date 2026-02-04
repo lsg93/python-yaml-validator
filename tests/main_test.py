@@ -10,15 +10,6 @@ def test_main_exits_with_code_0_and_success_message_when_completing_execution(
     assert result.exit_code == 0
 
 
-# def test_main_can_read_an_existing_config_file_when_no_path_is_provided(
-#     cli, config_path
-# ):
-#     create_config_path("mock-yaml-data")
-#     result = cli()
-#     assert result.exit_code == 0
-#     assert result.output == "Success!"
-
-
 # # Do not use the config_path fixture here, so we can test failure when no path is provided and no default config exists.
 # @pytest.mark.parametrize(
 #     ("argument", "expected exception"),

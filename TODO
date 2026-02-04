@@ -1,1 +1,3 @@
 TODO
+Abstract file loading so we can process rules (Wrote tests, now implement it)
+Make thing take two args and test it.
