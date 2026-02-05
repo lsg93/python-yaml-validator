@@ -4,7 +4,7 @@ from typing import Annotated, Optional
 import typer
 from dotenv import load_dotenv
 
-from src import Config, ConfigFileNotFoundException, NoDefaultConfigException
+from src import Config, ConfigFileNotFoundException
 
 # Load env vars for use in config.
 load_dotenv()

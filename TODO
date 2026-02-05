@@ -1,3 +1,7 @@
+goal is taking some rules in a yaml, then using those rules to validate another yaml
+
 TODO
-Abstract file loading so we can process rules (Wrote tests, now implement it)
+
+Pass file from loader to a Custom Type that checks file is valid yaml, then reads it into a "data" property
+Refactor main test to be a class, with create_config as fixture (auto use maybe?)
 Make thing take two args and test it.
