@@ -2,10 +2,12 @@ import os
 from pathlib import Path
 from typing import Self
 
+from src.models import ConfigData, Loader
+
 from .exceptions import InvalidArgumentException, LoaderFileNotFoundException
 
 
-class Loader(object):
+class FileLoader(Loader):
     def __init__(self: Self, path: Path | str):
         if path is None:
             raise InvalidArgumentException(
@@ -22,7 +24,7 @@ class Loader(object):
         else:
             self.path = path
 
-    def load_file(self):
+    def load(self):
         if self.path.is_dir():
             raise IsADirectoryError
 
@@ -30,6 +32,6 @@ class Loader(object):
             raise PermissionError(f"Cannot read file at {self.path}")
 
         if self.path.exists() and self.path.is_file():
-            return self.path
+            return ConfigData(data=self.path.read_text(), format=self.path.suffix)
         else:
             raise LoaderFileNotFoundException
