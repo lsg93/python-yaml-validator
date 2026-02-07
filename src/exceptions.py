@@ -9,6 +9,8 @@ class InvalidArgumentException(Exception):
 class ConfigFileNotFoundException(Exception):
     pass
 
+class Con
+
 
 # File loader exceptions
 class LoaderFileNotFoundException(Exception):
