@@ -7,11 +7,10 @@ class Config(object):
     def __init__(self, source: ConfigData, parser: Parser):
         self.source = source
         self.parser = parser
-        self.rules = None
 
         try:
             self._validate_extension()
-            self.rules = self.parser.parse(self.source)
+            self.parser.parse(self.source)
         except Exception as e:
             raise e
 

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Protocol, Self
 
 
@@ -6,6 +6,7 @@ from typing import Callable, Protocol, Self
 class ConfigData:
     data: Callable[[], str]
     format: str
+    rules: dict = field(default_factory=dict)
 
 
 class Loader(Protocol):
@@ -15,7 +16,7 @@ class Loader(Protocol):
 class Parser(Protocol):
     supported_formats: list[str]
 
-    def parse(data: ConfigData) -> Rules: ...
+    def parse(data: ConfigData) -> dict: ...
 
 
 class Rules(object): ...

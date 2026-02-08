@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 import pytest
 
-from src import Config, ConfigData, InvalidConfigFileExtensionException, Rules
+from src import Config, ConfigData, InvalidConfigFileExtensionException
 
 
 class TestConfigWithYamlParser:
@@ -41,11 +41,9 @@ class TestConfigWithYamlParser:
         data = ConfigData(data="test", format="yaml")
         mock_parser = MockYamlParser(supported_formats=("yaml", "yml"))
 
-        config = Config(source=data, parser=mock_parser)
+        _ = Config(source=data, parser=mock_parser)
 
         assert mock_parser.call_count == 1
-
-        assert isinstance(config.rules, Rules)
 
 
 @dataclass

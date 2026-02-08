@@ -6,7 +6,6 @@ from .exceptions import (
     LoaderFileNotFoundException,
 )
 from .loader import FileLoader
-from .parser import Rules
 
 __all__ = [
     Config,
@@ -16,5 +15,4 @@ __all__ = [
     InvalidConfigFileExtensionException,
     FileLoader,
     LoaderFileNotFoundException,
-    Rules,
 ]
