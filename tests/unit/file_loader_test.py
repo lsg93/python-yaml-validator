@@ -30,29 +30,27 @@ class TestFileLoader:
     def test_loads_file(self: Self):
         with self._mock_path(exists=True, is_file=True):
             loader = FileLoader(path="path/to/file.txt")
-            _ = loader.load_file()
+            _ = loader.load()
 
     def test_raises_exception_when_loading_nonexistent_file(self: Self):
-        with self._mock_path(exists=False, is_file=True, has_permissions=False):
-            path = "nonexistent/path/file.txt"
-            loader = FileLoader(path=path)
-
+        with self._mock_path(exists=False, is_file=True, has_permissions=True):
             with pytest.raises(LoaderFileNotFoundException):
-                _ = loader.load_file()
+                loader = FileLoader(path=Path("nonexistent/path/file.txt"))
+                _ = loader.load()
 
     def test_raises_exception_when_loading_file_without_read_permissions(self: Self):
         with self._mock_path(exists=True, is_file=True, has_permissions=False):
             loader = FileLoader(path="protected/file.txt")
 
             with pytest.raises(PermissionError):
-                _ = loader.load_file()
+                _ = loader.load()
 
     def test_raises_exception_when_loading_file_which_is_directory(self: Self):
         with self._mock_path(exists=True, is_file=False):
             loader = FileLoader(path="/path/")
 
             with pytest.raises(IsADirectoryError):
-                _ = loader.load_file()
+                _ = loader.load()
 
     @contextmanager
     def _mock_path(

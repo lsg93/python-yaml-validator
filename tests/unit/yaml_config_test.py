@@ -22,11 +22,11 @@ class TestConfigWithYamlParser:
         raises_exception: bool,
     ):
         data = ConfigData(data="test", format=given_extension)
-        mock_parser = MockParser(supported_formats=("yaml", "yml"))
+        mock_parser = MockYamlParser(supported_formats=("yaml", "yml"))
 
         with (
             pytest.raises(InvalidConfigFileExtensionException)
-            if raises_exception is not None
+            if raises_exception is True
             else nullcontext()
         ):
             _ = Config(
@@ -34,11 +34,12 @@ class TestConfigWithYamlParser:
                 parser=mock_parser,
             )
 
-        assert mock_parser.call_count == 1
+        if raises_exception is not True:
+            assert mock_parser.call_count == 1
 
     def test_config_returns_parsed_rules_as_property(self):
         data = ConfigData(data="test", format="yaml")
-        mock_parser = MockParser(supported_formats=("yaml", "yml"))
+        mock_parser = MockYamlParser(supported_formats=("yaml", "yml"))
 
         config = Config(source=data, parser=mock_parser)
 
@@ -48,10 +49,10 @@ class TestConfigWithYamlParser:
 
 
 @dataclass
-class MockParser:
+class MockYamlParser:
     call_count: int = 0
     supported_formats: list = field(default_factory=list)
 
-    def parse(self, data: ConfigData):
+    def parse(self, _: ConfigData):
         self.call_count += 1
-        return data
+        return Rules()

@@ -32,6 +32,6 @@ class FileLoader(Loader):
             raise PermissionError(f"Cannot read file at {self.path}")
 
         if self.path.exists() and self.path.is_file():
-            return ConfigData(data=self.path.read_text(), format=self.path.suffix)
+            return ConfigData(data=self.path.read_text, format=self.path.suffix)
         else:
             raise LoaderFileNotFoundException

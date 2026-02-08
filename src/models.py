@@ -1,15 +1,15 @@
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Callable, Protocol, Self
 
 
 @dataclass
 class ConfigData:
-    data: str
+    data: Callable[[], str]
     format: str
 
 
 class Loader(Protocol):
-    def load() -> ConfigData: ...
+    def load(self: Self) -> ConfigData: ...
 
 
 class Parser(Protocol):

@@ -16,9 +16,9 @@ class Config(object):
             raise e
 
     def _validate_extension(self):
-        if self.source.format.lower() in [
+        normalised_extension = self.source.format.removeprefix(".").lower()
+
+        if normalised_extension not in [
             format.lower() for format in self.parser.supported_formats
         ]:
-            return
-        else:
             raise InvalidConfigFileExtensionException
