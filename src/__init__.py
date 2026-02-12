@@ -4,6 +4,7 @@ from .exceptions import (
     InvalidArgumentException,
     InvalidConfigFileExtensionException,
     LoaderFileNotFoundException,
+    YAMLException,
 )
 from .loader import FileLoader
 
@@ -15,4 +16,5 @@ __all__ = [
     InvalidConfigFileExtensionException,
     FileLoader,
     LoaderFileNotFoundException,
+    YAMLException,
 ]

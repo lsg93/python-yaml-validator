@@ -1,3 +1,5 @@
+from inspect import cleandoc
+
 valid_yaml_str = """
         application:
             name: MyAwesomeApp
@@ -37,22 +39,29 @@ valid_yaml_stub = {
     },
 }
 
-malformed_yaml_stub = """
+malformed_yaml_str = """
         application:
           name: MyAwesomeApp
           version "1.0.0" # Missing colon here
              debug_mode: true # Incorrect indentation
         """
 
-empty_yaml_stub = ""
+malformed_yaml_stub = {"input": malformed_yaml_str, "expected_result": None}
 
-incorrectly_nested_yaml_stub = """
+empty_yaml_stub = {"input": "", "expected_result": None}
+
+incorrectly_nested_yaml_str = """
         level1:
           level2:
          level3: value # Incorrectly indented
         """
 
-multiple_documents_yaml_stub = """
+incorrectly_nested_yaml_stub = {
+    "input": incorrectly_nested_yaml_str,
+    "expected_result": None,
+}
+
+multiple_documents_yaml_str = cleandoc("""
         # Document 1
         config:
             name: PrimaryConfig
@@ -67,4 +76,9 @@ multiple_documents_yaml_stub = """
         database:
             type: sqlite
             path: /var/data/app.db
-        """
+        """)
+
+multiple_documents_yaml_stub = {
+    "input": multiple_documents_yaml_str,
+    "expected_result": {"config": {"name": "PrimaryConfig", "enabled": True}},
+}

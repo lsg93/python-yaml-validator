@@ -1,10 +1,17 @@
 from typing import Callable, Self
 
 import pytest
-from stubs import valid_yaml_stub
+from stubs.test_parser_stubs import (
+    empty_yaml_stub,
+    incorrectly_nested_yaml_stub,
+    malformed_yaml_stub,
+    multiple_documents_yaml_stub,
+    valid_yaml_stub,
+)
 
+from src.exceptions import EmptySourceException, YAMLException
 from src.models import ConfigData
-from src.parser import PYYamlWrapper, YAMLParser
+from src.parser import PYYAMLWrapper, YAMLParser
 
 # Code
 
@@ -22,21 +29,51 @@ class TestYamlParser:
     def test_parser_successfully_parses_valid_yaml(self, yaml_data: ConfigDataFactory):
         data = yaml_data(valid_yaml_stub["input"])
         expected_result = valid_yaml_stub["expected_result"]
-        parser = YAMLParser(wrapper=PYYamlWrapper())
+
+        parser = YAMLParser(wrapper=PYYAMLWrapper())
         parser.parse(data)
 
         assert data.rules == expected_result
 
-    # def test_parser_raises_exception_if_yaml_is_malformed(self):
-    #     pass
+    parser_exception_cases = [
+        pytest.param(malformed_yaml_stub["input"], id="malformed yaml"),
+        pytest.param(
+            incorrectly_nested_yaml_stub["input"],
+            id="incorrectly nested yaml",
+        ),
+    ]
 
-    # def test_parser_raises_exception_if_yaml_is_empty(self):
-    #     pass
+    @pytest.mark.parametrize(("input"), parser_exception_cases)
+    def test_parser_raises_exception(
+        self,
+        yaml_data: ConfigDataFactory,
+        input: str,
+    ):
+        data = yaml_data(input)
+        parser = YAMLParser(wrapper=PYYAMLWrapper())
 
-    # def test_parser_handles_incorrect_nesting(self):
-    #     pass
+        with pytest.raises(YAMLException):
+            parser.parse(data)
 
-    # def test_parser_handles_multiple_inline_documents(self):
-    #     pass
+    def test_parser_raises_exception_for_empty_yaml(self, yaml_data: ConfigDataFactory):
+        data = yaml_data(empty_yaml_stub["input"])
+        parser = YAMLParser(wrapper=PYYAMLWrapper())
 
-    pass
+        with pytest.raises(EmptySourceException):
+            parser.parse(data)
+            assert data.rules is None
+
+    """" Even though it's not realistically going to happen, 
+        this is a decent test to have 
+        in case we actually do want this functionality later """
+
+    def test_parser_parses_ignores_multiple_inline_documents(
+        self, yaml_data: ConfigDataFactory
+    ):
+        data = yaml_data(multiple_documents_yaml_stub["input"])
+        expected_result = multiple_documents_yaml_stub["expected_result"]
+
+        parser = YAMLParser(wrapper=PYYAMLWrapper())
+        parser.parse(data)
+
+        assert data.rules == expected_result

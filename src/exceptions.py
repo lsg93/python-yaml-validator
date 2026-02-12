@@ -6,14 +6,23 @@ class InvalidArgumentException(Exception):
 # CLI exceptions
 
 
-class ConfigFileNotFoundException(Exception):
-    pass
+class ConfigFileNotFoundException(Exception): ...
 
 
-class InvalidConfigFileExtensionException(Exception):
-    pass
+class InvalidConfigFileExtensionException(Exception): ...
 
 
 # File loader exceptions
-class LoaderFileNotFoundException(Exception):
-    pass
+class LoaderFileNotFoundException(Exception): ...
+
+
+# Parser exceptions
+
+
+class ParserException(Exception): ...
+
+
+class YAMLException(ParserException): ...
+
+
+class EmptySourceException(ParserException): ...

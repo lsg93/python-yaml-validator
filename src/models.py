@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, Protocol, Self
 
 
@@ -6,7 +6,7 @@ from typing import Callable, Protocol, Self
 class ConfigData:
     data: Callable[[], str]
     format: str
-    rules: dict = field(default_factory=dict)
+    rules: None | dict = None
 
 
 class Loader(Protocol):
