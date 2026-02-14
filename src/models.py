@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Protocol, Self
+from typing import Any, Callable, Protocol, Self, runtime_checkable
 
 
 @dataclass
@@ -19,4 +19,8 @@ class Parser(Protocol):
     def parse(data: ConfigData) -> dict: ...
 
 
-class Rules(object): ...
+@runtime_checkable
+class RuleProtocol(Protocol):
+    message: str
+
+    def __call__(self: Self, attribute: Any) -> bool: ...
