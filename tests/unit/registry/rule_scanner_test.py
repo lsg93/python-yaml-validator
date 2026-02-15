@@ -1,21 +1,28 @@
-# use generators/iterables for performance...
+# Tests
+
 from importlib import metadata
 from importlib.metadata import EntryPoint
+from pathlib import Path
 from typing import Iterator
 from unittest.mock import patch
 
 import pytest
 from stubs.test_filesystem_stubs import internal_filesystem_stub, invalid_filenames_stub
 
+# Used for mocking filepath
+import src.registry.scanner as scanner_module
+from src.registry.scanner import Scanner
+
 
 class TestRuleScanner:
     @pytest.fixture()
     def create_rule_fs(self, fs):
+        root = Path(scanner_module.__file__).parent.parent.parent
+
         def create_from_stub(stub: dict):
-            # create fake file structure from stub
-            for path, files in internal_filesystem_stub.items():
+            for path, files in stub.items():
                 for file in files:
-                    fs.create_file(f"{path}/{file}")
+                    fs.create_file(f"{root}/{path}/{file}")
 
         return create_from_stub
 
@@ -37,12 +44,12 @@ class TestRuleScanner:
             EntryPoint(
                 name="user_defined_rule",
                 value="external-rules-package.rules:user_defined_rule",
-                group="extra.rules",
+                group="python-yaml-validator.extra-rules",
             ),
             EntryPoint(
                 name="another_user_defined_rule",
                 value="external-rules-package.rules:another_user_defined_rule",
-                group="extra.rules",
+                group="python-yaml-validator.extra-rules",
             ),
         )
 
@@ -72,3 +79,53 @@ class TestRuleScanner:
 
         assert isinstance(rules, Iterator)
         assert list(rules) == []
+
+
+# Scanner
+
+import importlib
+import importlib.metadata
+from dataclasses import dataclass
+
+DEFAULT_PATH = Path(__file__).parent.parent / "rules"
+
+
+@dataclass
+class InternalRule:
+    path: Path
+
+    # TODO
+    def load(): ...
+
+
+@dataclass
+class ExternalRule:
+    entry_point: importlib.metadata.EntryPoint
+
+    def load(self):
+        self.entry_point.load()
+
+
+class Scanner(object):
+    def __init__(
+        self,
+    ):
+        self.internal_root = DEFAULT_PATH
+
+    def get_rules(self):
+        yield from self._scan_internal_rules()
+        yield from self._scan_external_rules()
+
+    def _scan_internal_rules(self) -> Iterator[InternalRule]:
+        path = Path(DEFAULT_PATH)
+        for file in path.rglob("*_rule.py"):
+            if file.is_file():
+                yield InternalRule(path=file)
+
+    def _scan_external_rules(self) -> Iterator[ExternalRule]:
+        entry_points = importlib.metadata.entry_points(
+            group="python-yaml-validator.extra-rules"
+        )
+
+        for entry_point in entry_points:
+            yield ExternalRule(entry_point=entry_point)
