@@ -1,23 +1,29 @@
 import importlib
 import importlib.metadata
-from dataclasses import dataclass
+import importlib.util
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Protocol
 
 DEFAULT_PATH = Path(__file__).parent.parent / "rules"
 
 
-@dataclass
-class InternalRule:
-    path: Path
-
-    # TODO - read about importlib.util.spec_from_file_location
+class RuleLoader(Protocol):
     def load(): ...
 
 
-@dataclass
-class ExternalRule:
-    entry_point: importlib.metadata.EntryPoint
+class InternalRuleLoader(Protocol):
+    def __init__(self, path: Path):
+        self.path = path
+
+    # TODO - read about importlib.util.spec_from_file_location
+    def load(self):
+        spec = importlib.util.spec_from_file_location(self.path)
+        breakpoint()
+
+
+class ExternalRuleLoader(Protocol):
+    def __init__(self, entry_point: importlib.metadata.EntryPoint):
+        self.entry_point = entry_point
 
     def load(self):
         self.entry_point.load()
@@ -29,20 +35,20 @@ class Scanner(object):
     ):
         self.internal_root = DEFAULT_PATH
 
-    def get_rules(self):
+    def get_rules(self) -> Iterator[RuleLoader]:
         yield from self._scan_internal_rules()
         yield from self._scan_external_rules()
 
-    def _scan_internal_rules(self) -> Iterator[InternalRule]:
+    def _scan_internal_rules(self) -> Iterator[InternalRuleLoader]:
         path = Path(DEFAULT_PATH)
         for file in path.rglob("*_rule.py"):
             if file.is_file():
-                yield InternalRule(path=file)
+                yield InternalRuleLoader(path=file)
 
-    def _scan_external_rules(self) -> Iterator[ExternalRule]:
+    def _scan_external_rules(self) -> Iterator[ExternalRuleLoader]:
         entry_points = importlib.metadata.entry_points(
             group="python-yaml-validator.extra-rules"
         )
 
         for entry_point in entry_points:
-            yield ExternalRule(entry_point=entry_point)
+            yield ExternalRuleLoader(entry_point=entry_point)
