@@ -2,12 +2,17 @@ import importlib
 import importlib.metadata
 import importlib.util
 from pathlib import Path
-from typing import Iterator, Protocol
+from typing import Iterator, Protocol, runtime_checkable
 
 DEFAULT_PATH = Path(__file__).parent.parent / "rules"
 
 
+@runtime_checkable
 class RuleLoader(Protocol):
+    _identifier: str
+
+    def getIdentifier() -> str: ...
+
     def load(): ...
 
 

@@ -1,7 +1,27 @@
 goal is taking some rules in a yaml, then using those rules to validate another yaml
 
-TODO
+
+Validation steps :
+Initialize the Registry (load all available Rule classes).
+
+Pass the Registry into the Validator.
+
+Run the Validator (it uses the Registry as a lookup table).
+
+
+- Rules. Rules should be a registry for individual Rule classes.
+
+- People should be able to add their own 'rules' somehow - maybe using the multidoc functionality to point to where extra rules are, or as a pypi package
 
 Pass file from loader to a Custom Type that checks file is valid yaml, then reads it into a "data" property
+
 Refactor main test to be a class, with create_config as fixture (auto use maybe?)
 Make thing take two args and test it.
+
+TODO
+
+- Clean up implementation of mocks in rule_registry test. Probably no need for 3 mocks - could be one customisable one.
+
+Start working on validator integration tests. Will need a "fake" rule that actually exists, and maybe a fake package - https://stackoverflow.com/questions/79386183/how-can-i-test-that-python-package-entrypoints-are-correctly-discovered-and-load
+
+

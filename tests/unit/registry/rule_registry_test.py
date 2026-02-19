@@ -1,37 +1,52 @@
 from collections import namedtuple
-from typing import NamedTuple
+from typing import List, NamedTuple
 
 import pytest
 
 # Why do imports not work as expected?
-from src.models import RuleProtocol
-from src.registry.registry import RuleRegistry
+from src.registry.registry import (
+    InvalidRuleLoaderException,
+    NoValidRulesInRegistryException,
+    RuleRegistry,
+)
+from src.registry.scanner import RuleLoader
 
 
-class MockInternalRuleLoader(RuleProtocol):
+class MockInternalRuleLoader(RuleLoader):
     def __init__(self):
-        pass
+        self.calls = 0
+        self._identifier = "internal_rule"
 
-    def load(): ...
+    def getIdentifier(self) -> str:
+        return self._identifier
+
+    def load(self):
+        self.calls + 1
 
 
-class MockExternalRuleLoader(RuleProtocol):
+class MockExternalRuleLoader(RuleLoader):
     def __init__(self):
-        pass
+        self.calls = 0
+        self._identifier = "external_rule"
 
-    def load(): ...
+    def getIdentifier(self) -> str:
+        return self._identifier
+
+    def load(self):
+        self.calls += 1
 
 
-class MockInvalidRuleLoader(RuleProtocol):
+class MockInvalidRuleLoader:
     def __init__(self):
-        pass
+        self.calls = 0
 
-    def load(): ...
+    def load(self):
+        self.calls += 1
 
 
 class TestRuleRegistry:
     @pytest.fixture()
-    def mocked_rules() -> NamedTuple:
+    def mocked_rules(self) -> NamedTuple:
         Mocks = namedtuple(
             "Mocks", ["valid_internal_rule", "valid_external_rule", "invalid_rule"]
         )
@@ -47,15 +62,22 @@ class TestRuleRegistry:
         registry = RuleRegistry(rules=iter(rules))
 
         assert len(registry) == len(list(rules))
+        assert len(registry.errors) == 0
+        self.assertRulesNotCalledByRegistry(rules)
 
     def test_registry_stores_exception_if_a_given_rule_is_invalid(self, mocked_rules):
         valid_internal_rule, _, invalid_rule = mocked_rules
         rules = [valid_internal_rule, invalid_rule]
         registry = RuleRegistry(rules=iter(rules))
 
-        assert len(registry) == (len(list(rules) - 1))
+        assert len(registry) == len(rules) - 1
+        self.assertRulesNotCalledByRegistry(rules)
         assert len(registry.errors) == 1
-        assert isinstance(registry.errors[0]["exception"], InvalidRuleException)
+
+        expected_exception = registry.errors[0]
+        assert isinstance(expected_exception, InvalidRuleLoaderException)
+
+        assert "Invalid rule" in str(expected_exception)
 
     def test_registry_stores_exception_if_given_rules_contain_duplicates(
         self, mocked_rules
@@ -64,17 +86,21 @@ class TestRuleRegistry:
         rules = [valid_internal_rule, valid_internal_rule]
         registry = RuleRegistry(rules=iter(rules))
 
-        assert len(registry) == (len(list(rules) - 1))
+        assert len(registry) == len(rules) - 1
         assert len(registry.errors) == 1
-        assert isinstance(registry.errors[0]["exception"], DuplicateRuleNameException)
+
+        expected_exception = registry.errors[0]
+        assert isinstance(expected_exception, InvalidRuleLoaderException)
+
+        assert "identifier already exists" in str(expected_exception)
 
     def test_registry_throws_exception_if_no_rules_can_be_stored(self, mocked_rules):
-        valid_internal_rule, _, invalid_rule = mocked_rules
-        rules = [valid_internal_rule, invalid_rule]
+        _, _, invalid_rule = mocked_rules
+        rules = [invalid_rule]
 
-        with pytest.raises(NoRulesFoundException):
-            registry = RuleRegistry(rules=iter(rules))
+        with pytest.raises(NoValidRulesInRegistryException):
+            _ = RuleRegistry(rules=iter(rules))
 
-        assert len(registry) == 0
-        assert len(registry.errors) == 1
-        assert isinstance(registry.errors[0]["exception"], NoRulesFoundException)
+    def assertRulesNotCalledByRegistry(self, rules: List[RuleLoader]):
+        for rule in rules:
+            assert rule.calls == 0
