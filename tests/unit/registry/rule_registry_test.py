@@ -1,5 +1,5 @@
-from collections import namedtuple
-from typing import List, NamedTuple
+from dataclasses import dataclass
+from typing import List
 
 import pytest
 
@@ -12,52 +12,48 @@ from src.registry.registry import (
 from src.registry.scanner import RuleLoader
 
 
-class MockInternalRuleLoader(RuleLoader):
-    def __init__(self):
-        self.calls = 0
-        self._identifier = "internal_rule"
+@dataclass
+class MockLoader:
+    valid: bool
+    calls: int = 0
+    _identifier: str = ""
 
     def getIdentifier(self) -> str:
         return self._identifier
 
-    def load(self):
-        self.calls + 1
 
-
-class MockExternalRuleLoader(RuleLoader):
-    def __init__(self):
-        self.calls = 0
-        self._identifier = "external_rule"
-
-    def getIdentifier(self) -> str:
-        return self._identifier
-
+@dataclass
+class ValidLoader(MockLoader):
     def load(self):
         self.calls += 1
 
 
-class MockInvalidRuleLoader:
-    def __init__(self):
-        self.calls = 0
-
-    def load(self):
-        self.calls += 1
+@dataclass
+class InvalidLoader(MockLoader): ...
 
 
 class TestRuleRegistry:
     @pytest.fixture()
-    def mocked_rules(self) -> NamedTuple:
-        Mocks = namedtuple(
-            "Mocks", ["valid_internal_rule", "valid_external_rule", "invalid_rule"]
-        )
+    def mock_rules(self) -> List[MockLoader]:
+        def setup_mocks(mock_list: List[dict]):
+            def return_loader(arguments):
+                return (
+                    ValidLoader(**arguments)
+                    if arguments["valid"]
+                    else InvalidLoader(**arguments)
+                )
 
-        return Mocks(
-            MockInternalRuleLoader(), MockExternalRuleLoader(), MockInvalidRuleLoader()
-        )
+            return [return_loader(arguments) for arguments in mock_list]
 
-    def test_registry_stores_given_rules_(self, mocked_rules):
-        valid_internal_rule, valid_external_rule, _ = mocked_rules
-        rules = [valid_internal_rule, valid_external_rule]
+        return setup_mocks
+
+    def test_registry_stores_given_rules_(self, mock_rules):
+        rules = mock_rules(
+            [
+                {"_identifier": "rule_one", "valid": True},
+                {"_identifier": "rule_two", "valid": True},
+            ]
+        )
 
         registry = RuleRegistry(rules=iter(rules))
 
@@ -65,9 +61,13 @@ class TestRuleRegistry:
         assert len(registry.errors) == 0
         self.assertRulesNotCalledByRegistry(rules)
 
-    def test_registry_stores_exception_if_a_given_rule_is_invalid(self, mocked_rules):
-        valid_internal_rule, _, invalid_rule = mocked_rules
-        rules = [valid_internal_rule, invalid_rule]
+    def test_registry_stores_exception_if_a_given_rule_is_invalid(self, mock_rules):
+        rules = mock_rules(
+            [
+                {"_identifier": "rule_one", "valid": True},
+                {"_identifier": "rule_two", "valid": False},
+            ]
+        )
         registry = RuleRegistry(rules=iter(rules))
 
         assert len(registry) == len(rules) - 1
@@ -80,10 +80,15 @@ class TestRuleRegistry:
         assert "Invalid rule" in str(expected_exception)
 
     def test_registry_stores_exception_if_given_rules_contain_duplicates(
-        self, mocked_rules
+        self, mock_rules
     ):
-        valid_internal_rule, _, _ = mocked_rules
-        rules = [valid_internal_rule, valid_internal_rule]
+        rules = mock_rules(
+            [
+                {"_identifier": "rule_one", "valid": True},
+                {"_identifier": "rule_one", "valid": True},
+            ]
+        )
+
         registry = RuleRegistry(rules=iter(rules))
 
         assert len(registry) == len(rules) - 1
@@ -94,9 +99,8 @@ class TestRuleRegistry:
 
         assert "identifier already exists" in str(expected_exception)
 
-    def test_registry_throws_exception_if_no_rules_can_be_stored(self, mocked_rules):
-        _, _, invalid_rule = mocked_rules
-        rules = [invalid_rule]
+    def test_registry_throws_exception_if_no_rules_can_be_stored(self, mock_rules):
+        rules = mock_rules([])
 
         with pytest.raises(NoValidRulesInRegistryException):
             _ = RuleRegistry(rules=iter(rules))

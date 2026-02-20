@@ -11,9 +11,9 @@ DEFAULT_PATH = Path(__file__).parent.parent / "rules"
 class RuleLoader(Protocol):
     _identifier: str
 
-    def getIdentifier() -> str: ...
+    def getIdentifier(self) -> str: ...
 
-    def load(): ...
+    def load(self): ...
 
 
 class InternalRuleLoader(Protocol):
@@ -23,7 +23,6 @@ class InternalRuleLoader(Protocol):
     # TODO - read about importlib.util.spec_from_file_location
     def load(self):
         spec = importlib.util.spec_from_file_location(self.path)
-        breakpoint()
 
 
 class ExternalRuleLoader(Protocol):

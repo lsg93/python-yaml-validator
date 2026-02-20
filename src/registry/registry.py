@@ -15,7 +15,7 @@ class RuleRegistry:
         self.errors = list()
 
         for rule in rules:
-            if isinstance(rule, RuleLoader) is False:
+            if not isinstance(rule, RuleLoader):
                 self.errors.append(InvalidRuleLoaderException("Invalid rule."))
                 continue
 
