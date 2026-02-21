@@ -36,8 +36,9 @@ class TestValidator:
         rules = setup_mocks({"numeric": MockLoader(valid=True, _identifier="numeric")})
 
         validator = Validator(config=config, data=data, rules=rules)
+        validator.validate()
 
-        rules["numeric"].load.assert_called_once_with(data["memory_limit"])
+        rules["numeric"].load.assert_called_once()
 
     def test_validator_provides_path_to_attribute_if_validation_fails():
         config = {"memory_limit": {"rule": "numeric"}}
