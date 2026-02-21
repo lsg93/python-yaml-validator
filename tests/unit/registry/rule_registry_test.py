@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import List
 
 import pytest
@@ -10,26 +9,7 @@ from src.registry.registry import (
     RuleRegistry,
 )
 from src.registry.scanner import RuleLoader
-
-
-@dataclass
-class MockLoader:
-    valid: bool
-    calls: int = 0
-    _identifier: str = ""
-
-    def getIdentifier(self) -> str:
-        return self._identifier
-
-
-@dataclass
-class ValidLoader(MockLoader):
-    def load(self):
-        self.calls += 1
-
-
-@dataclass
-class InvalidLoader(MockLoader): ...
+from tests.mocks.mocks import InvalidLoader, MockLoader, ValidLoader
 
 
 class TestRuleRegistry:
