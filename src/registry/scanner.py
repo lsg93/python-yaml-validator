@@ -4,6 +4,8 @@ import importlib.util
 from pathlib import Path
 from typing import Iterator, Protocol, runtime_checkable
 
+from src.models import RuleProtocol
+
 DEFAULT_PATH = Path(__file__).parent.parent / "rules"
 
 
@@ -13,7 +15,7 @@ class RuleLoader(Protocol):
 
     def getIdentifier(self) -> str: ...
 
-    def load(self): ...
+    def load(self) -> RuleProtocol: ...
 
 
 class InternalRuleLoader(Protocol):

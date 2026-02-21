@@ -1,3 +1,5 @@
+from src.validator import Validator
+
 from .config import Config, ConfigData
 from .exceptions import (
     ConfigFileNotFoundException,
@@ -17,4 +19,5 @@ __all__ = [
     FileLoader,
     LoaderFileNotFoundException,
     YAMLException,
+    Validator,
 ]
