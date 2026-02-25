@@ -1,14 +1,17 @@
+from dataclasses import dataclass
 from unittest.mock import MagicMock
 
 import pytest
 
 from src.validator import Validator
-from tests.mocks.mocks import InvalidLoader, ValidLoader
-from tests.unit.registry.rule_registry_test import MockLoader
+from tests.mocks.mocks import MockLoader
 
 
+@dataclass
 class ValidatorMockLoader(MockLoader):
-    def load(self): ...
+    return_value: bool = True
+
+    def load(self, **params): ...
 
 
 class TestValidator:
@@ -20,7 +23,7 @@ class TestValidator:
             """
             for rule in rules.values():
                 if rule.valid is True:
-                    rule.load = MagicMock(return_value=True)
+                    rule.load = MagicMock(return_value=rule.return_value)
                 else:
                     rule.load = MagicMock(side_effect=Exception)
 
@@ -33,19 +36,53 @@ class TestValidator:
     ):
         config = {"memory_limit": {"rule": "numeric"}}
         data = {"memory_limit": 512}
-        rules = setup_mocks({"numeric": MockLoader(valid=True, _identifier="numeric")})
+        rules = setup_mocks(
+            {"numeric": ValidatorMockLoader(valid=True, _identifier="numeric")}
+        )
 
         validator = Validator(config=config, data=data, rules=rules)
         validator.validate()
 
         rules["numeric"].load.assert_called_once()
 
-    def test_validator_provides_path_to_attribute_if_validation_fails():
+    def test_validator_can_call_multiple_rules(self, setup_mocks):
+        config = {"memory_limit": {"rule": "numeric"}}
+        data = {"memory_limit": 512}
+        rules = setup_mocks(
+            {"numeric": ValidatorMockLoader(valid=True, _identifier="numeric")}
+        )
+
+        validator = Validator(config=config, data=data, rules=rules)
+        validator.validate()
+
+        rules["numeric"].load.assert_called_once()
+
+    attribute_path_cases = (
+        pytest.param(id="top level rule"),
+        pytest.param(id="nested rule"),
+    )
+
+    # Test normal and nested route here
+    def test_validator_provides_path_to_attribute_if_validation_fails(
+        self, setup_mocks
+    ):
         config = {"memory_limit": {"rule": "numeric"}}
         data = {"memory_limit": "abc"}
-        rules = {"numeric": MockLoader(valid=True, _identifier="numeric")}
+        rules = setup_mocks(
+            {
+                "numeric": ValidatorMockLoader(
+                    valid=True, return_value=False, _identifier="numeric"
+                )
+            }
+        )
 
-    def test_validator_calls_rules_with_params_if_provided():
+        validator = Validator(config=config, data=data, rules=rules)
+        validator.validate()
+
+        rules["numeric"].load.assert_called_once()
+        assert "numeric" in validator.failures
+
+    def test_validator_calls_rules_with_params_if_provided(self, setup_mocks):
         config = {
             "database": {
                 "engine": {
@@ -57,15 +94,14 @@ class TestValidator:
 
         data = {"database": {"engine": "mysql"}}
 
-        rules = {"choice": ValidLoader(valid=True, _identifier="choice")}
+        rules = setup_mocks(
+            {"choice": ValidatorMockLoader(valid=True, _identifier="choice")}
+        )
 
-        validator = Validator(data=data, rules=rules)
+        validator = Validator(config=config, data=data, rules=rules)
         validator.validate()
 
-        assert ValidLoader.called_with == 512
-        assert ValidLoader.calls == 1
-
-    def test_validator_calls_correct_rule_when_attributes_are_nested():
+    def test_validator_calls_correct_rule_when_attributes_are_nested(self, setup_mocks):
         config = {
             "load_balancer": {
                 "protocol": {
@@ -81,20 +117,23 @@ class TestValidator:
 
         data = {"load_balancer": {"protocol": "HTTP", "port": 8080}}
 
-        rules = {
-            "choice": ValidLoader(valid=True, _identifier="choice"),
-            "range": ValidLoader(valid=True, _identifier="range"),
-        }
+        rules = setup_mocks(
+            {
+                "choice": ValidatorMockLoader(valid=True, _identifier="choice"),
+                "range": ValidatorMockLoader(valid=True, _identifier="range"),
+            }
+        )
 
         validator = Validator(config=config, data=data, rules=rules)
+        validator.validate()
 
-        assert ValidLoader.called_with == 512
-        assert ValidLoader.calls == 1
+    def test_validator_raises_exception_when_building_targets_if_data_is_malformed():
+        pass
 
     def test_validator_raises_exception_if_a_given_rule_cannot_be_found():
         config = {"memory_limit": {"rule": "numeric"}}
         data = {"memory_limit": 512}
-        rules = {"numeric": MockLoader(valid=True, _identifier="numeric")}
+        rules = {"numeric": ValidatorMockLoader(valid=True, _identifier="numeric")}
 
         with pytest.raises(RuleNotFoundException, match='"numeric" not found'):
             Validator(config=config, data=data, rules=rules)

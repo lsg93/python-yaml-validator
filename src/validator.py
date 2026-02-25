@@ -3,6 +3,9 @@ from typing import ItemsView, Iterable, List, Optional
 from src.registry.scanner import RuleLoader
 
 
+class AttributeNotFoundException(Exception): ...
+
+
 class ValueNotFoundException(Exception):
     pass
 
@@ -27,10 +30,13 @@ class Validator:
     def validate(self) -> bool:
         validation_targets = self._build_validation_targets(self.config.items())
 
-        for attribute, value in validation_targets:
+        for attribute, rule_definition in validation_targets.items():
             try:
-                value, rule = self._get_attribute(attribute)
-                passed = self._validate_value(value=value, rule=rule)
+                value = self._get_attribute(attribute)
+                rule = self._get_rule(rule_definition["rule"])
+                params = rule_definition.get("params", {})
+
+                passed = self._validate_value(value=value, rule=rule, **params)
                 self.results[attribute] = passed
 
                 if not passed:
@@ -72,25 +78,42 @@ class Validator:
 
         return targets
 
-    # def _get_attribute(self, attribute: str): NamedTuple
-    #     # This is where we need to do a walk
-    #     value = self.data.get(attribute)
-    #     if value is None:
-    #         raise RuleNotFoundException(f'Value for "{attribute}" not found.')
-    #     return value
+    def _get_attribute(self, attribute: str):
+        # Given attributes can be nested with dot notation,
+        # So we need to use this dot notation to traverse the data dictionary.
+        # And get the right value for the given attribute.
 
-    # def _get_rule(self, name: str) -> RuleLoader:
-    #     rule = self.rules.get(name)
-    #     if rule is None:
-    #         raise RuleNotFoundException(f'Rule "{rule}" not found.')
-    #     return rule
+        path = attribute.split(".")
+        current = self.data
 
-    # def _validate_value(
-    #     self, value: any, rule: RuleLoader, params: Optional[dict] = {}
-    # ):
-    #     try:
-    #         callable_rule = rule.load()
-    #         return callable_rule(value, **params)
-    #     except Exception as caught_exception:
-    #         # We can't always know what exception is being thrown, so we just re-raise it as something more user friendly.
-    #         raise RuleException from caught_exception
+        for property in path:
+            if not isinstance(current, dict):
+                raise AttributeNotFoundException(
+                    f'Could not find attribute "{property}" in given data.'
+                )
+
+            value = current.get(property)
+
+            if value is None:
+                raise AttributeNotFoundException(
+                    f'Could not find attribute "{property}" in given data.'
+                )
+
+            current = value
+
+        return current
+
+    def _get_rule(self, identifier: str, **params) -> RuleLoader:
+        rule = self.rules.get(identifier)
+
+        if rule is None:
+            raise RuleNotFoundException(f'Rule "{rule}" not found.')
+        return rule
+
+    def _validate_value(self, value: any, rule: RuleLoader, **params):
+        try:
+            callable_rule = rule.load()
+            return callable_rule(value, **params)
+        except Exception as caught_exception:
+            # We can't always know what exception is being thrown here, so we just re-raise it as something more user friendly.
+            raise RuleException from caught_exception
